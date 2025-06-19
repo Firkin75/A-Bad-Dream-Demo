@@ -1,36 +1,41 @@
 using UnityEngine;
 
+/// <summary>
+/// 常にカメラの方向を向くビルボード処理
+/// </summary>
 public class Billboard : MonoBehaviour
 {
-    private Transform cameraTransform; // �ᥤ�󥫥���Transform�ؤβ���
+    private Transform cameraTransform; // メインカメラのTransformへの参照
 
     void Start()
     {
-        // �ᥤ�󥫥���ȡ��
+        // メインカメラのTransformを取得
         if (Camera.main != null)
         {
             cameraTransform = Camera.main.transform;
         }
         else
         {
-            Debug.LogError("Billboard: �ᥤ�󥫥�餬Ҋ�Ĥ���ޤ���");
+            // カメラが見つからない場合はエラーメッセージを出力
+            Debug.LogError("Billboard: メインカメラが見つかりません！");
         }
     }
 
     void LateUpdate()
     {
-        if (cameraTransform == null) return; // ����餬δ�O���Έ��ϤτI����ֹ
+        // カメラが未設定の場合は処理を行わない
+        if (cameraTransform == null) return;
 
-        // ����鷽��ؤΥ٥��ȥ��Ӌ��
+        // カメラの位置とこのオブジェクトの位置の差分ベクトルを計算（＝カメラの方向）
         Vector3 direction = cameraTransform.position - transform.position;
 
-        // ���ץ�������¤λ�ܞ��̶����᷽������򤯤褦�ˤ��룩
+        // Y軸の回転を固定（縦方向の追従を防ぐ、横方向のみ回転）
         direction.y = 0;
 
-        // �����η�����򤯤褦�˻�ܞ
+        // カメラの方向に向くようにオブジェクトを回転
         transform.rotation = Quaternion.LookRotation(direction);
 
-        // �����ʾ�����ץ饤�Ȥ����򤭤Έ��ϣ�
+        // オブジェクトがカメラに背を向けないように180度回転（スプライトが逆になるのを防ぐ）
         transform.Rotate(0, 180f, 0);
     }
 }
