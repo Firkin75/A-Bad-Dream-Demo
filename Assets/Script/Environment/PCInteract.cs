@@ -1,42 +1,49 @@
 using UnityEngine;
 
+/// <summary>
+/// PCや端末とのインタラクション処理を行うスクリプト
+/// ノート・マップ・セキュリティ端末に応じた挙動を管理
+/// </summary>
 public class PCInteract : MonoBehaviour, IInteractable
 {
-    public bool isNote;        // �Ω`�ȣ��R�귵��ʹ�ÿɣ�
-    public bool isMap;         // �ޥåױ�ʾ��1�ؤΤߣ�
-    public bool isSecurity;    // �������ƥ����`ȡ�ö�ĩ��1�ؤΤߣ�
+    public bool isNote;        // ノートのUIを開くか（繰り返し使用可能）
+    public bool isMap;         // マップを表示する端末か（1回のみ）
+    public bool isSecurity;    // 鍵を取得するセキュリティ端末か（1回のみ）
 
-    public GameObject enemySet;     // �����󼤻�ĵ�����
-    public GameObject indicator;    // ��ʾUI�����������أ�
+    public GameObject enemySet;     // インタラクト後に出現させる敵グループ
+    public GameObject indicator;    // 交互前に表示されるUIアイコン（Eキーなど）
 
     [Header("Security Light")]
-    public Light securityLight;     // �������ƥ��饤�ȣ��vɫ�ˉ仯��
+    public Light securityLight;     // セキュリティ端末のライト（成功時に緑点灯）
 
-    private bool hasInteracted = false; // һ���ޤ�΄I����ʹ�ã��Ω`�����⣩
+    private bool hasInteracted = false; // ノート以外の一度限り処理のフラグ
 
+    /// <summary>
+    /// プレイヤーがインタラクトした際の処理本体
+    /// </summary>
     public void Interact()
     {
-        // �Ω`�������һ���ޤ�
+        // ノート以外は一度だけ使用可能
         if (!isNote && hasInteracted) return;
 
-        // ��ͨ����Ч����
+        // すべて共通の処理：取得音再生
         MessageManager.Instance.PlayPickupSound();
 
-        // -------- �Ω`�� --------���R�귵���ɣ�
+        // -------- ノート処理（繰り返し可）--------
         if (isNote)
         {
-            UIManager.Instance.ShowNoteUI(true);
-            if (enemySet != null) enemySet.SetActive(true);
+            UIManager.Instance.ShowNoteUI(true);         // ノートUI表示
+            if (enemySet != null) enemySet.SetActive(true); // 敵出現
         }
 
-        // -------- �ޥå� --------��1�ؤΤߣ�
+        // -------- マップ処理（1回のみ）--------
         if (isMap && !hasInteracted)
         {
-            UIManager.Instance.ShowMiniMap(true);
+            UIManager.Instance.ShowMiniMap(true);  // ミニマップUI表示
             MessageManager.Instance.ShowWarningMessage("You got the map for this area");
         }
 
-        // -------- �������ƥ����` --------��1�ؤΤߣ�
+        // -------- セキュリティキー処理（1回のみ）--------
         if (isSecurity && !hasInteracted)
         {
             GameObject player = GameObject.FindWithTag("Player");
@@ -45,39 +52,43 @@ public class PCInteract : MonoBehaviour, IInteractable
                 PlayerInventory inventory = player.GetComponent<PlayerInventory>();
                 if (inventory != null)
                 {
-                    inventory.hasKey = true;
-                    UIManager.Instance.ShowKeyUI(true);
+                    inventory.hasKey = true;                        // 鍵を所持状態に
+                    UIManager.Instance.ShowKeyUI(true);            // 鍵UI表示
                     MessageManager.Instance.ShowPickupMessage("The door is now unlocked");
                 }
                 else
                 {
-                    Debug.LogWarning("PlayerInventory ����ݩ`�ͥ�Ȥ�Ҋ�Ĥ���ޤ���");
+                    Debug.LogWarning("PlayerInventory コンポーネントが見つかりません！");
                 }
             }
             else
             {
-                Debug.LogWarning("�ץ쥤��`��Ҋ�Ĥ���ޤ���");
+                Debug.LogWarning("プレイヤーが見つかりません！");
             }
 
+            // セキュリティライトを緑色に変更
             if (securityLight != null)
                 securityLight.color = Color.green;
         }
 
-        // ��ͨ�I����ָʾ��������Ǳ�ʾ�������F
+        // -------- 共通後処理 --------
         if (indicator != null)
-            indicator.SetActive(false);
+            indicator.SetActive(false);  // UIアイコン非表示
 
         if (enemySet != null)
-            enemySet.SetActive(true);
+            enemySet.SetActive(true);    // 敵出現（ノートでも有効）
 
-        // �Ω`������ʤ�һ���ޤ�
+        // ノート以外は使用済みに設定
         if (!isNote)
             hasInteracted = true;
     }
 
+    /// <summary>
+    /// インタラクト可能かどうかの判定
+    /// </summary>
     public bool IsInteractable()
     {
-        // �Ω`���������ʹ�ò���
+        // ノートは繰り返し可、それ以外は未使用のみ可
         return isNote || !hasInteracted;
     }
 }
